@@ -1,0 +1,51 @@
+<%- include("../partials/header", { pageTitle: product.title }) %>
+
+<header class="store-header">
+    <a href="/dashboard" class="brand">My Store</a>
+    <a href="/dashboard" class="back-link">Back to Products</a>
+</header>
+
+<main class="detail-container">
+    <div class="detail-image">
+        <img
+            src="<%= product.thumbnail || '/images/placeholder.png' %>"
+            alt="<%= product.title %>"
+        >
+    </div>
+
+    <section class="detail-info">
+        <p class="category-label"><%= product.category || "Product" %></p>
+
+        <h1><%= product.title %></h1>
+
+        <% if (product.brand) { %>
+            <p><strong>Brand:</strong> <%= product.brand %></p>
+        <% } %>
+
+        <p class="price">
+            $<%= Number(product.price || 0).toFixed(2) %>
+        </p>
+
+        <h2>Description</h2>
+        <p><%= product.description || "No description available." %></p>
+
+        <% if (product.specifications &&
+               Object.keys(product.specifications).length > 0) { %>
+
+            <h2>Specifications</h2>
+
+            <ul class="spec-list">
+                <% Object.entries(product.specifications).forEach(([key, value]) => { %>
+                    <li>
+                        <strong><%= key %>:</strong>
+                        <%= typeof value === "object"
+                            ? JSON.stringify(value)
+                            : value %>
+                    </li>
+                <% }); %>
+            </ul>
+        <% } %>
+    </section>
+</main>
+
+<%- include("../partials/footer") %>

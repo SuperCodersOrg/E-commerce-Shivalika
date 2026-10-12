@@ -1,0 +1,34 @@
+<%- include("partials/header", { pageTitle: "My Store - Dashboard" }) %>
+
+<header class="store-header">
+    <a href="/dashboard" class="brand">My Store</a>
+
+    <div class="user-menu">
+        <div class="avatar"><%= initial %></div>
+        <span class="user-name"><%= user.name %></span>
+
+        <form action="/auth/logout" method="POST">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    </div>
+</header>
+
+<main class="dashboard">
+    <section class="welcome-section">
+        <h1>Discover Products</h1>
+        <p>Welcome, <%= user.name %>! Explore our collection.</p>
+    </section>
+
+    <section id="productGrid" class="product-grid"></section>
+
+    <p id="loadingMessage" class="status-message">Loading products...</p>
+    <p id="errorMessage" class="error" hidden></p>
+
+    <button id="loadMoreBtn" class="primary-btn load-more-btn" hidden>
+        Load More
+    </button>
+</main>
+
+<script src="/js/loadMore.js" defer></script>
+
+<%- include("partials/footer") %>

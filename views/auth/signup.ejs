@@ -1,0 +1,48 @@
+
+<%- include("../partials/header", { pageTitle: "Create Account" }) %>
+
+<main class="auth-container">
+    <form class="auth-card" action="/auth/signup" method="POST">
+        <h1>Create Account</h1>
+        <p class="muted">Create your account to explore products.</p>
+
+        <% if (typeof error !== "undefined" && error) { %>
+            <p class="error"><%= error %></p>
+        <% } %>
+
+        <label for="name">Full Name</label>
+        <input
+            id="name"
+            type="text"
+            name="name"
+            required
+            maxlength="100"
+            autocomplete="name"
+        >
+
+        <label for="email">Email</label>
+        <input
+            id="email"
+            type="email"
+            name="email"
+            required
+            autocomplete="email"
+        >
+
+        <label for="password">Password</label>
+        <input
+            id="password"
+            type="password"
+            name="password"
+            minlength="8"
+            required
+            autocomplete="new-password"
+        >
+
+        <button type="submit" class="primary-btn">Sign Up</button>
+
+        <p>Already registered? <a href="/auth/login">Login</a></p>
+    </form>
+</main>
+
+<%- include("../partials/footer") %>
