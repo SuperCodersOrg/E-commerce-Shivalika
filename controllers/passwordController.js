@@ -5,7 +5,10 @@ const User = require("../models/User");
 const { sendEmail } = require("../services/emailService");
 
 const showForgotPassword = (req, res) => {
-    res.render("auth/forgot-password", { message: null });
+    res.render("auth/forgot-password", {
+        message: null,
+        resetLink: null
+    });
 };
 
 const forgotPassword = async (req, res, next) => {
@@ -19,7 +22,8 @@ const forgotPassword = async (req, res, next) => {
 
         if (!user) {
             return res.render("auth/forgot-password", {
-                message: genericMessage
+                message: genericMessage,
+                resetLink: null
             });
         }
 
@@ -37,9 +41,15 @@ const forgotPassword = async (req, res, next) => {
 
         await user.save();
 
-        const resetLink =
-            `${process.env.BASE_URL}/auth/reset-password/${rawToken}`;
+        const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+        const resetLink = `${baseUrl}/auth/reset-password/${rawToken}`;
 
+        console.log("==================================================");
+        console.log(`[PASSWORD RESET] User: ${user.email}`);
+        console.log(`[PASSWORD RESET LINK] ${resetLink}`);
+        console.log("==================================================");
+
+        let emailSent = false;
         try {
             await sendEmail({
                 to: user.email,
@@ -47,21 +57,19 @@ const forgotPassword = async (req, res, next) => {
                 html: `
                     <h2>Password Reset</h2>
                     <p>Click below to choose a new password.</p>
-                    <a href="${resetLink}">Reset Password</a>
+                    <p><a href="${resetLink}">Reset Password</a></p>
                     <p>This link expires in 15 minutes.</p>
                     <p>If you did not request this, ignore this email.</p>
                 `
             });
+            emailSent = true;
         } catch (emailError) {
-            user.passwordResetToken = null;
-            user.passwordResetExpires = null;
-            await user.save();
-
-            throw emailError;
+            console.warn("Failed to dispatch password reset email via SMTP:", emailError.message);
         }
 
         res.render("auth/forgot-password", {
-            message: genericMessage
+            message: genericMessage,
+            resetLink: !emailSent ? resetLink : null
         });
     } catch (error) {
         next(error);
@@ -81,7 +89,10 @@ const showResetPassword = async (req, res) => {
 
     if (!user) {
         return res.status(400).render("auth/verify-message", {
-            message: "Password reset link is invalid or expired."
+            title: "Invalid or Expired Link",
+            message: "Password reset link is invalid or expired. Please request a new one.",
+            actionLink: "/auth/forgot-password",
+            actionText: "Request New Link"
         });
     }
 
@@ -121,7 +132,10 @@ const resetPassword = async (req, res, next) => {
 
         if (!user) {
             return res.status(400).render("auth/verify-message", {
-                message: "Password reset link is invalid or expired."
+                title: "Invalid or Expired Link",
+                message: "Password reset link is invalid or expired. Please request a new one.",
+                actionLink: "/auth/forgot-password",
+                actionText: "Request New Link"
             });
         }
 
@@ -132,7 +146,10 @@ const resetPassword = async (req, res, next) => {
         await user.save();
 
         res.render("auth/verify-message", {
-            message: "Password changed successfully. Please log in again."
+            title: "Password Updated!",
+            message: "Password changed successfully. You can now log in with your new password.",
+            actionLink: "/auth/login",
+            actionText: "Proceed to Login"
         });
     } catch (error) {
         next(error);

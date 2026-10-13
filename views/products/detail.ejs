@@ -2,15 +2,33 @@
 
 <header class="store-header">
     <a href="/dashboard" class="brand">My Store</a>
-    <a href="/dashboard" class="back-link">Back to Products</a>
+    <a href="/dashboard" class="back-link">&larr; Back to Products</a>
 </header>
 
 <main class="detail-container">
-    <div class="detail-image">
-        <img
-            src="<%= product.thumbnail || '/images/placeholder.png' %>"
-            alt="<%= product.title %>"
-        >
+    <div class="detail-image-section">
+        <div class="detail-image">
+            <img
+                id="mainImage"
+                src="<%= product.thumbnail || (product.images && product.images.length > 0 ? product.images[0] : '/images/placeholder.svg') %>"
+                alt="<%= product.title %>"
+                onerror="this.onerror=null;this.src='/images/placeholder.svg';"
+            >
+        </div>
+
+        <% if (product.images && product.images.length > 1) { %>
+            <div class="detail-thumbnails">
+                <% product.images.forEach((imgUrl, idx) => { %>
+                    <img
+                        src="<%= imgUrl %>"
+                        alt="Thumbnail <%= idx + 1 %>"
+                        class="thumbnail-item <%= idx === 0 ? 'active' : '' %>"
+                        onclick="document.getElementById('mainImage').src = this.src; document.querySelectorAll('.thumbnail-item').forEach(el => el.classList.remove('active')); this.classList.add('active');"
+                        onerror="this.style.display='none';"
+                    >
+                <% }); %>
+            </div>
+        <% } %>
     </div>
 
     <section class="detail-info">
@@ -30,6 +48,7 @@
         <p><%= product.description || "No description available." %></p>
 
         <% if (product.specifications &&
+               typeof product.specifications === 'object' &&
                Object.keys(product.specifications).length > 0) { %>
 
             <h2>Specifications</h2>

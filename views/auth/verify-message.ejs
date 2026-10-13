@@ -1,10 +1,20 @@
-<%- include("../partials/header", { pageTitle: "Account Message" }) %>
+<%- include("../partials/header", { pageTitle: typeof title !== "undefined" ? title : "Account Message" }) %>
 
 <main class="auth-container">
-    <section class="auth-card">
-        <h1>My Store</h1>
-        <p><%= message %></p>
-        <a class="primary-btn button-link" href="/auth/login">Go to Login</a>
+    <section class="auth-card" style="text-align: center;">
+        <h1><%= typeof title !== "undefined" ? title : "My Store" %></h1>
+        <p class="muted" style="margin: 16px 0 24px; line-height: 1.5;"><%= message %></p>
+
+        <% if (typeof actionLink !== "undefined" && actionLink) { %>
+            <a class="primary-btn button-link" href="<%= actionLink %>">
+                <%= typeof actionText !== "undefined" ? actionText : "Continue" %>
+            </a>
+            <p style="margin-top: 18px;">
+                <a href="/auth/login" class="muted">Or go to Login</a>
+            </p>
+        <% } else { %>
+            <a class="primary-btn button-link" href="/auth/login">Go to Login</a>
+        <% } %>
     </section>
 </main>
 

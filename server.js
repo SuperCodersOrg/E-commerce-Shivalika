@@ -37,6 +37,23 @@ app.use("/auth", passwordRoutes);
 app.use("/", dashboardRoutes);
 app.use("/", productRoutes);
 
+// 404 handler for unmatched routes
+app.use((req, res) => {
+    const isApiRequest = (req.originalUrl && req.originalUrl.startsWith("/api/")) || 
+                         (req.path && req.path.startsWith("/api/"));
+
+    if (isApiRequest) {
+        return res.status(404).json({ error: "Endpoint not found." });
+    }
+
+    res.status(404).render("auth/verify-message", {
+        title: "404 - Not Found",
+        message: "The page you are looking for does not exist.",
+        actionLink: "/dashboard",
+        actionText: "Back to Store"
+    });
+});
+
 app.use(errorMiddleware);
 
 const startServer = async () => {

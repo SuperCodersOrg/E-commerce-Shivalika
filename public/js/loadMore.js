@@ -36,7 +36,7 @@ async function loadProducts() {
             const result = await response.json().catch(() => ({}));
 
             throw new Error(
-                result.message || "Unable to load products."
+                result.message || result.error || "Unable to load products."
             );
         }
 
@@ -47,15 +47,39 @@ async function loadProducts() {
             card.className = "product-card";
             card.href = `/products/${product._id}`;
 
+            const imageWrap = document.createElement("div");
+            imageWrap.className = "product-image-wrap";
+
             const image = document.createElement("img");
-            image.src = product.thumbnail || "/images/placeholder.png";
+            image.src = product.thumbnail || "/images/placeholder.svg";
             image.alt = product.title;
             image.loading = "lazy";
+            image.onerror = function () {
+                this.onerror = null;
+                this.src = "/images/placeholder.svg";
+            };
+            imageWrap.appendChild(image);
+
+            const info = document.createElement("div");
+            info.className = "product-info";
+
+            if (product.category) {
+                const category = document.createElement("span");
+                category.className = "product-category";
+                category.textContent = product.category;
+                info.appendChild(category);
+            }
 
             const title = document.createElement("h3");
             title.textContent = product.title;
+            info.appendChild(title);
 
-            card.append(image, title);
+            const price = document.createElement("div");
+            price.className = "product-price";
+            price.textContent = `$${Number(product.price || 0).toFixed(2)}`;
+            info.appendChild(price);
+
+            card.append(imageWrap, info);
             productGrid.appendChild(card);
         });
 

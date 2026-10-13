@@ -1,5 +1,10 @@
-
 const nodemailer = require("nodemailer");
+const dns = require("dns");
+
+// Prefer IPv4 to avoid ENETUNREACH errors on Windows / ISPs
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder("ipv4first");
+}
 
 const createTransporter = () => {
     const user = process.env.EMAIL_USER?.trim();
@@ -9,14 +14,7 @@ const createTransporter = () => {
     const secure = process.env.EMAIL_SECURE === "true" || (host === "smtp.gmail.com" && port === 465);
 
     if (!user || !pass) {
-        throw new Error("EMAIL_USER and EMAIL_PASS must be set in .env.");
-    }
-
-    if (!process.env.EMAIL_HOST && host === "smtp.gmail.com" && pass.length !== 16) {
-        throw new Error(
-            "For Gmail, EMAIL_PASS must be a 16-character Google App Password. " +
-            "If you are using another SMTP provider, set EMAIL_HOST, EMAIL_PORT, and EMAIL_SECURE manually."
-        );
+        throw new Error("EMAIL_USER and EMAIL_PASS must be configured in .env.");
     }
 
     return nodemailer.createTransport({
@@ -24,15 +22,15 @@ const createTransporter = () => {
         port,
         secure,
         auth: { user, pass },
-        connectionTimeout: 15000,
-        greetingTimeout: 15000,
-        socketTimeout: 20000
+        connectionTimeout: 4000,
+        greetingTimeout: 4000,
+        socketTimeout: 4000
     });
 };
 
 const sendEmail = async ({ to, subject, html }) => {
     const transporter = createTransporter();
-    const user = process.env.EMAIL_USER.trim();
+    const user = process.env.EMAIL_USER?.trim() || "no-reply@mystore.com";
 
     return transporter.sendMail({
         from: `"My Store" <${user}>`,
