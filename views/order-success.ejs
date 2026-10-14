@@ -1,0 +1,84 @@
+<%- include("partials/header", { pageTitle: "Order Confirmed - Receipt" }) %>
+<%- include("partials/navbar") %>
+
+<main class="success-container">
+    <div class="success-card">
+        <div class="success-icon">🎉</div>
+        <h1>Order Confirmed!</h1>
+        <p class="success-subtitle">Thank you for your order. Your payment via Stripe was successful.</p>
+
+        <div class="order-meta-pill">
+            <span>Order ID: <strong>#<%= order._id %></strong></span>
+            <span>&bull;</span>
+            <span>Date: <strong><%= new Date(order.createdAt).toLocaleDateString() %></strong></span>
+            <span>&bull;</span>
+            <span class="status-badge status-paid">Payment: <%= order.paymentStatus.toUpperCase() %></span>
+        </div>
+
+        <div class="receipt-grid">
+            <!-- Shipping Information -->
+            <div class="receipt-section">
+                <h3>Delivery Address</h3>
+                <p><strong><%= order.shippingAddress.fullName %></strong></p>
+                <p><%= order.shippingAddress.addressLine %></p>
+                <p><%= order.shippingAddress.city %>, <%= order.shippingAddress.state %> - <%= order.shippingAddress.postalCode %></p>
+                <p><%= order.shippingAddress.country %></p>
+                <p class="muted">Phone: <%= order.shippingAddress.phone %></p>
+            </div>
+
+            <!-- Bill Breakdown -->
+            <div class="receipt-section">
+                <h3>Bill Summary</h3>
+                <div class="receipt-line">
+                    <span>Subtotal:</span>
+                    <span>$<%= order.bill.subtotal.toFixed(2) %></span>
+                </div>
+                <div class="receipt-line">
+                    <span>Shipping:</span>
+                    <span><%= order.bill.shippingFee === 0 ? "FREE" : "$" + order.bill.shippingFee.toFixed(2) %></span>
+                </div>
+                <div class="receipt-line">
+                    <span>Tax (5%):</span>
+                    <span>$<%= order.bill.tax.toFixed(2) %></span>
+                </div>
+                <hr class="receipt-divider">
+                <div class="receipt-total-line">
+                    <span>Total Paid:</span>
+                    <strong class="total-paid-price">$<%= order.bill.totalAmount.toFixed(2) %></strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ordered Items Table -->
+        <div class="receipt-items-container">
+            <h3>Ordered Products</h3>
+            <div class="receipt-items-list">
+                <% order.items.forEach(item => { %>
+                    <div class="receipt-item-row">
+                        <img
+                            src="<%= item.thumbnail || '/images/placeholder.svg' %>"
+                            alt="<%= item.title %>"
+                            class="receipt-item-img"
+                            onerror="this.onerror=null;this.src='/images/placeholder.svg';"
+                        >
+                        <div class="receipt-item-info">
+                            <span class="receipt-item-name"><%= item.title %></span>
+                            <span class="muted">Qty: <%= item.quantity %> &times; $<%= Number(item.price).toFixed(2) %></span>
+                        </div>
+                        <strong class="receipt-item-total">
+                            $<%= Number(item.price * item.quantity).toFixed(2) %>
+                        </strong>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="success-actions">
+            <a href="/profile" class="primary-btn">View My Orders in Profile</a>
+            <a href="/dashboard" class="secondary-btn">Continue Shopping</a>
+        </div>
+    </div>
+</main>
+
+<%- include("partials/footer") %>

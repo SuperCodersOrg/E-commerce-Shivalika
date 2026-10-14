@@ -36,6 +36,7 @@ const showLogin = (req, res) => {
     res.render("auth/login", {
         error: null,
         verificationLink: null,
+        redirect: req.query.redirect || null,
         message: req.query.registered
             ? "Account created. Check your email and verify your account before logging in."
             : null
@@ -319,7 +320,12 @@ const login = async (req, res, next) => {
             maxAge: 60 * 60 * 1000
         });
 
-        return res.redirect("/dashboard");
+        const redirectParam = req.body.redirect || req.query.redirect;
+        const targetUrl = (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//"))
+            ? redirectParam
+            : "/dashboard";
+
+        return res.redirect(targetUrl);
 
     } catch (error) {
         return next(error);

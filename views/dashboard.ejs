@@ -1,34 +1,51 @@
-<%- include("partials/header", { pageTitle: "My Store - Dashboard" }) %>
-
-<header class="store-header">
-    <a href="/dashboard" class="brand">My Store</a>
-
-    <div class="user-menu">
-        <div class="avatar"><%= initial %></div>
-        <span class="user-name"><%= user.name %></span>
-
-        <form action="/auth/logout" method="POST">
-            <button type="submit" class="logout-btn">Logout</button>
-        </form>
-    </div>
-</header>
+<%- include("partials/header", { pageTitle: "My Store - Discover Products" }) %>
+<%- include("partials/navbar") %>
 
 <main class="dashboard">
     <section class="welcome-section">
         <h1>Discover Products</h1>
-        <p>Welcome, <%= user.name %>! Explore our collection.</p>
+        <% if (typeof user !== "undefined" && user) { %>
+            <p>Welcome back, <strong><%= user.name %></strong>! Explore our collection.</p>
+        <% } else { %>
+            <p>Welcome! Browse our collection. Log in to add items to your cart and place orders.</p>
+        <% } %>
     </section>
 
+    <!-- Product Grid filled dynamically via cursor pagination -->
     <section id="productGrid" class="product-grid"></section>
 
     <p id="loadingMessage" class="status-message">Loading products...</p>
     <p id="errorMessage" class="error" hidden></p>
 
     <button id="loadMoreBtn" class="primary-btn load-more-btn" hidden>
-        Load More
+        Load More Products
     </button>
 </main>
 
+<!-- Login Required Modal Popup (Appears when guest clicks Add to Cart) -->
+<div id="loginModalOverlay" class="modal-overlay" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button id="closeModalBtn" class="modal-close-btn" aria-label="Close modal">&times;</button>
+        <div class="modal-icon">🛍️</div>
+        <h2 id="modalTitle">Login Required</h2>
+        <p class="modal-desc">
+            Please log in or create an account to add items to your cart and proceed with checkout.
+        </p>
+        <div class="modal-actions">
+            <a href="/auth/login?redirect=/dashboard" class="primary-btn modal-login-btn">Log In</a>
+            <a href="/auth/signup" class="secondary-btn modal-signup-btn">Create an Account</a>
+        </div>
+        <button id="cancelModalBtn" class="modal-cancel-link">Continue Browsing as Guest</button>
+    </div>
+</div>
+
+<!-- Floating Toast Notification for Cart Actions -->
+<div id="toastNotification" class="toast-notification" hidden></div>
+
+<script>
+    // Pass authentication status to frontend JS
+    window.IS_USER_LOGGED_IN = <%= typeof user !== "undefined" && user ? "true" : "false" %>;
+</script>
 <script src="/js/loadMore.js" defer></script>
 
 <%- include("partials/footer") %>

@@ -19,6 +19,8 @@
                 <p class="small-text">Click the button below to verify your account:</p>
                 <a href="<%= verificationLink %>" class="primary-btn button-link verify-btn">Verify Email Now</a>
             </div>
+        <% if (typeof redirect !== "undefined" && redirect) { %>
+            <input type="hidden" name="redirect" value="<%= redirect %>">
         <% } %>
 
         <label for="email">Email</label>

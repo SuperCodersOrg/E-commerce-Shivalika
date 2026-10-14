@@ -1,0 +1,269 @@
+<%- include("partials/header", { pageTitle: "My Profile & Orders" }) %>
+<%- include("partials/navbar") %>
+
+<main class="profile-container">
+    <div class="profile-layout">
+        <!-- User Profile Card -->
+        <aside class="profile-sidebar">
+            <div class="user-profile-card">
+                <div class="profile-avatar"><%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %></div>
+                <h2 class="profile-user-name"><%= user.name %></h2>
+                <p class="profile-user-email"><%= user.email %></p>
+
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <span class="stat-number"><%= totalOrdersCount %></span>
+                        <span class="stat-label">Total Orders</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number"><%= typeof cartCount !== 'undefined' ? cartCount : 0 %></span>
+                        <span class="stat-label">Cart Items</span>
+                    </div>
+                </div>
+
+                <div class="profile-meta-info">
+                    <p class="small-text muted">
+                        <strong>Member Since:</strong> <%= new Date(user.createdAt || Date.now()).toLocaleDateString() %>
+                    </p>
+                    <p class="small-text muted">
+                        <strong>Email Verified:</strong> <%= user.isEmailVerified ? "✅ Verified" : "⚠️ Pending" %>
+                    </p>
+                </div>
+
+                <div class="profile-actions">
+                    <a href="/cart" class="primary-btn button-link profile-cart-btn">View Cart 🛒</a>
+                    <form action="/auth/logout" method="POST" style="margin-top: 10px;">
+                        <button type="submit" class="logout-btn full-width">Sign Out</button>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Orders History Section with Cursor Indexing -->
+        <section class="profile-content">
+            <div class="orders-section-header">
+                <h2>My Orders History</h2>
+                <span class="orders-count-badge"><%= totalOrdersCount %> Orders</span>
+            </div>
+
+            <% if (!orders || orders.length === 0) { %>
+                <div class="empty-orders-card">
+                    <div class="empty-orders-icon">📦</div>
+                    <h3>No orders placed yet</h3>
+                    <p class="muted">You haven't ordered anything yet. Browse our store to make your first purchase!</p>
+                    <a href="/dashboard" class="primary-btn button-link">Browse Products</a>
+                </div>
+            <% } else { %>
+                <div id="ordersContainer" class="orders-list">
+                    <% orders.forEach(order => { %>
+                        <article class="order-card" id="order-<%= order._id %>">
+                            <header class="order-card-header">
+                                <div class="order-header-main">
+                                    <span class="order-id">Order #<%= order._id %></span>
+                                    <span class="order-date"><%= new Date(order.createdAt).toLocaleDateString() %></span>
+                                </div>
+                                <div class="order-header-badges">
+                                    <span class="status-badge status-<%= order.paymentStatus %>">
+                                        Payment: <%= order.paymentStatus.toUpperCase() %>
+                                    </span>
+                                    <span class="status-badge status-<%= order.orderStatus %>">
+                                        Status: <%= order.orderStatus.toUpperCase() %>
+                                    </span>
+                                </div>
+                            </header>
+
+                            <div class="order-card-body">
+                                <!-- Order Items -->
+                                <div class="order-items-list">
+                                    <% order.items.forEach(item => { %>
+                                        <div class="order-item-row">
+                                            <img
+                                                src="<%= item.thumbnail || '/images/placeholder.svg' %>"
+                                                alt="<%= item.title %>"
+                                                class="order-item-img"
+                                                onerror="this.onerror=null;this.src='/images/placeholder.svg';"
+                                            >
+                                            <div class="order-item-details">
+                                                <h4 class="order-item-title"><%= item.title %></h4>
+                                                <span class="muted"><%= item.quantity %> &times; $<%= Number(item.price).toFixed(2) %></span>
+                                            </div>
+                                            <div class="order-item-actions">
+                                                <% if (item.product) { %>
+                                                    <a href="/products/<%= item.product %>" class="view-item-btn">
+                                                        Show Details
+                                                    </a>
+                                                    <button type="button" class="buy-again-btn" onclick="quickAddToCart('<%= item.product %>', '<%= item.title.replace(/'/g, '') %>')">
+                                                        Add to Cart 🛒
+                                                    </button>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    <% }); %>
+                                </div>
+
+                                <footer class="order-card-footer">
+                                    <div class="order-shipping-summary">
+                                        <small class="muted">Delivering to:</small>
+                                        <strong><%= order.shippingAddress.fullName %></strong> &bull; <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %>
+                                    </div>
+                                    <div class="order-total-summary">
+                                        <span>Total:</span>
+                                        <strong class="order-total-amount">$<%= order.bill.totalAmount.toFixed(2) %></strong>
+                                    </div>
+                                </footer>
+                            </div>
+                        </article>
+                    <% }); %>
+                </div>
+
+                <!-- Cursor-based Pagination for Orders -->
+                <div class="orders-pagination-container">
+                    <button
+                        type="button"
+                        id="loadMoreOrdersBtn"
+                        class="secondary-btn load-orders-btn"
+                        <%= hasMore ? "" : "hidden" %>
+                        data-next-cursor="<%= nextCursor || '' %>"
+                    >
+                        Load Older Orders (Cursor Indexing)
+                    </button>
+                    <p id="ordersEndMessage" class="muted small-text" style="text-align: center; margin-top: 10px;" <%= hasMore ? "hidden" : "" %>>
+                        All orders loaded.
+                    </p>
+                </div>
+            <% } %>
+        </section>
+    </div>
+</main>
+
+<!-- Floating Toast -->
+<div id="toastNotification" class="toast-notification" hidden></div>
+
+<script>
+    let nextOrderCursor = "<%= nextCursor || '' %>";
+    const loadMoreOrdersBtn = document.getElementById("loadMoreOrdersBtn");
+    const ordersContainer = document.getElementById("ordersContainer");
+    const ordersEndMessage = document.getElementById("ordersEndMessage");
+    const cartBadge = document.getElementById("cartBadge");
+    const toastNotification = document.getElementById("toastNotification");
+
+    function showToast(message) {
+        if (!toastNotification) return;
+        toastNotification.textContent = message;
+        toastNotification.className = "toast-notification toast-success toast-show";
+        toastNotification.hidden = false;
+        setTimeout(() => {
+            toastNotification.classList.remove("toast-show");
+            setTimeout(() => { toastNotification.hidden = true; }, 300);
+        }, 3000);
+    }
+
+    async function quickAddToCart(productId, title) {
+        try {
+            const res = await fetch("/api/cart/add", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({ productId, quantity: 1 })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to add to cart.");
+
+            if (cartBadge && typeof data.cartCount !== "undefined") {
+                cartBadge.textContent = data.cartCount;
+            }
+            showToast(`Added "${title}" to cart!`);
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    if (loadMoreOrdersBtn) {
+        loadMoreOrdersBtn.addEventListener("click", async () => {
+            if (!nextOrderCursor) return;
+
+            loadMoreOrdersBtn.disabled = true;
+            loadMoreOrdersBtn.textContent = "Loading older orders...";
+
+            try {
+                const res = await fetch(`/api/orders?cursor=${encodeURIComponent(nextOrderCursor)}`);
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.message || "Failed to load orders.");
+
+                data.orders.forEach(order => {
+                    const article = document.createElement("article");
+                    article.className = "order-card";
+                    article.id = "order-" + order._id;
+
+                    const dateStr = new Date(order.createdAt).toLocaleDateString();
+
+                    let itemsHtml = "";
+                    order.items.forEach(item => {
+                        const thumb = item.thumbnail || "/images/placeholder.svg";
+                        const actionsHtml = item.product ? `
+                            <div class="order-item-actions">
+                                <a href="/products/${item.product}" class="view-item-btn">Show Details</a>
+                                <button type="button" class="buy-again-btn" onclick="quickAddToCart('${item.product}', '${(item.title || "").replace(/'/g, '')}')">Add to Cart 🛒</button>
+                            </div>
+                        ` : "";
+
+                        itemsHtml += `
+                            <div class="order-item-row">
+                                <img src="${thumb}" alt="${item.title}" class="order-item-img" onerror="this.onerror=null;this.src='/images/placeholder.svg';">
+                                <div class="order-item-details">
+                                    <h4 class="order-item-title">${item.title}</h4>
+                                    <span class="muted">${item.quantity} &times; $${Number(item.price).toFixed(2)}</span>
+                                </div>
+                                ${actionsHtml}
+                            </div>
+                        `;
+                    });
+
+                    article.innerHTML = `
+                        <header class="order-card-header">
+                            <div class="order-header-main">
+                                <span class="order-id">Order #${order._id}</span>
+                                <span class="order-date">${dateStr}</span>
+                            </div>
+                            <div class="order-header-badges">
+                                <span class="status-badge status-${order.paymentStatus}">Payment: ${order.paymentStatus.toUpperCase()}</span>
+                                <span class="status-badge status-${order.orderStatus}">Status: ${order.orderStatus.toUpperCase()}</span>
+                            </div>
+                        </header>
+                        <div class="order-card-body">
+                            <div class="order-items-list">${itemsHtml}</div>
+                            <footer class="order-card-footer">
+                                <div class="order-shipping-summary">
+                                    <small class="muted">Delivering to:</small>
+                                    <strong>${order.shippingAddress.fullName}</strong> &bull; ${order.shippingAddress.city}, ${order.shippingAddress.state}
+                                </div>
+                                <div class="order-total-summary">
+                                    <span>Total:</span>
+                                    <strong class="order-total-amount">$${order.bill.totalAmount.toFixed(2)}</strong>
+                                </div>
+                            </footer>
+                        </div>
+                    `;
+
+                    ordersContainer.appendChild(article);
+                });
+
+                nextOrderCursor = data.nextCursor;
+                if (!data.hasMore || !nextOrderCursor) {
+                    loadMoreOrdersBtn.hidden = true;
+                    if (ordersEndMessage) ordersEndMessage.hidden = false;
+                }
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                loadMoreOrdersBtn.disabled = false;
+                loadMoreOrdersBtn.textContent = "Load Older Orders (Cursor Indexing)";
+            }
+        });
+    }
+</script>
+
+<%- include("partials/footer") %>

@@ -1,0 +1,37 @@
+<header class="store-header">
+    <div class="header-left">
+        <a href="/dashboard" class="brand">My Store</a>
+        <nav class="nav-links">
+            <a href="/dashboard" class="nav-link">Products</a>
+        </nav>
+    </div>
+
+    <div class="header-right">
+        <!-- Cart Icon & Counter -->
+        <a href="/cart" class="cart-link" id="headerCartLink" title="View Cart">
+            <span class="cart-icon">🛒</span>
+            <span class="cart-text">Cart</span>
+            <span class="cart-badge" id="cartBadge"><%= typeof cartCount !== "undefined" ? cartCount : 0 %></span>
+        </a>
+
+        <% if (typeof user !== "undefined" && user) { %>
+            <!-- Authenticated User Menu -->
+            <div class="user-menu">
+                <a href="/profile" class="user-profile-link" title="My Profile & Orders">
+                    <div class="avatar"><%= typeof initial !== "undefined" && initial ? initial : (user.name ? user.name.charAt(0).toUpperCase() : 'U') %></div>
+                    <span class="user-name"><%= user.name %></span>
+                </a>
+                <a href="/profile" class="orders-nav-btn">My Orders</a>
+                <form action="/auth/logout" method="POST" style="margin: 0;">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
+        <% } else { %>
+            <!-- Guest Links -->
+            <div class="guest-menu">
+                <a href="/auth/login" class="login-nav-btn">Login</a>
+                <a href="/auth/signup" class="signup-nav-btn">Sign Up</a>
+            </div>
+        <% } %>
+    </div>
+</header>

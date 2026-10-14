@@ -1,0 +1,183 @@
+<%- include("partials/header", { pageTitle: "Checkout - Shipping & Payment" }) %>
+<%- include("partials/navbar") %>
+
+<main class="checkout-container">
+    <div class="checkout-header">
+        <h1>Order Checkout</h1>
+        <a href="/cart" class="back-link">&larr; Back to Cart</a>
+    </div>
+
+    <% if (typeof error !== "undefined" && error) { %>
+        <div class="error checkout-error-banner"><%= error %></div>
+    <% } %>
+
+    <form action="/checkout/create-session" method="POST" class="checkout-layout">
+        <!-- Shipping Address Form -->
+        <section class="checkout-form-section">
+            <div class="checkout-card">
+                <h2>1. Shipping Address Details</h2>
+                <p class="muted">Please provide your complete shipping address for order delivery.</p>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input
+                            type="text"
+                            id="fullName"
+                            name="fullName"
+                            required
+                            value="<%= typeof user !== 'undefined' && user ? user.name : '' %>"
+                            placeholder="e.g. Shivalika Dhingra"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            required
+                            placeholder="e.g. +91 9876543210"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="addressLine">Street Address / House No. *</label>
+                    <input
+                        type="text"
+                        id="addressLine"
+                        name="addressLine"
+                        required
+                        placeholder="Flat / House No., Building Name, Street"
+                    >
+                </div>
+
+                <div class="form-row three-col">
+                    <div class="form-group">
+                        <label for="city">City *</label>
+                        <input
+                            type="text"
+                            id="city"
+                            name="city"
+                            required
+                            placeholder="e.g. New Delhi"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="state">State *</label>
+                        <input
+                            type="text"
+                            id="state"
+                            name="state"
+                            required
+                            placeholder="e.g. Delhi"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="postalCode">PIN / Postal Code *</label>
+                        <input
+                            type="text"
+                            id="postalCode"
+                            name="postalCode"
+                            required
+                            placeholder="e.g. 110001"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <input
+                        type="text"
+                        id="country"
+                        name="country"
+                        value="India"
+                        placeholder="India"
+                    >
+                </div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="checkout-card" style="margin-top: 24px;">
+                <h2>2. Payment Method</h2>
+                <div class="payment-method-card selected">
+                    <div class="payment-radio">
+                        <input type="radio" id="stripeRadio" name="paymentMethod" value="stripe" checked>
+                        <label for="stripeRadio">
+                            <strong>Stripe Online Payment (Credit / Debit Card)</strong>
+                            <span class="muted small-text">Powered by Stripe checkout & verified webhook.</span>
+                        </label>
+                    </div>
+                    <span class="stripe-badge">💳 Stripe</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bill & Order Review Aside -->
+        <aside class="checkout-summary-section">
+            <div class="summary-card">
+                <h2>3. Bill & Order Review</h2>
+
+                <!-- Items Preview -->
+                <div class="checkout-items-preview">
+                    <% cartItems.forEach(item => { %>
+                        <div class="checkout-item-row">
+                            <img
+                                src="<%= item.product.thumbnail || '/images/placeholder.svg' %>"
+                                alt="<%= item.product.title %>"
+                                class="checkout-item-thumb"
+                                onerror="this.onerror=null;this.src='/images/placeholder.svg';"
+                            >
+                            <div class="checkout-item-desc">
+                                <span class="checkout-item-name"><%= item.product.title %></span>
+                                <span class="muted"><%= item.quantity %> &times; $<%= Number(item.price || item.product.price || 0).toFixed(2) %></span>
+                            </div>
+                            <strong class="checkout-item-price">
+                                $<%= Number((item.price || item.product.price || 0) * item.quantity).toFixed(2) %>
+                            </strong>
+                        </div>
+                    <% }); %>
+                </div>
+
+                <hr class="summary-divider">
+
+                <!-- Bill Calculation -->
+                <div class="summary-line">
+                    <span>Subtotal:</span>
+                    <strong>$<%= totals.subtotal.toFixed(2) %></strong>
+                </div>
+
+                <div class="summary-line">
+                    <span>Shipping Fee:</span>
+                    <strong><%= totals.shippingFee === 0 ? "FREE" : "$" + totals.shippingFee.toFixed(2) %></strong>
+                </div>
+
+                <div class="summary-line">
+                    <span>Tax (5%):</span>
+                    <strong>$<%= totals.tax.toFixed(2) %></strong>
+                </div>
+
+                <hr class="summary-divider">
+
+                <div class="summary-total-line">
+                    <span>Final Bill:</span>
+                    <strong class="total-price">$<%= totals.totalAmount.toFixed(2) %></strong>
+                </div>
+
+                <button type="submit" class="primary-btn pay-btn">
+                    🔒 Pay with Stripe ($<%= totals.totalAmount.toFixed(2) %>)
+                </button>
+
+                <p class="secure-checkout-text">
+                    By clicking pay, you will be redirected to the secure Stripe checkout or test confirmation.
+                </p>
+            </div>
+        </aside>
+    </form>
+</main>
+
+<%- include("partials/footer") %>

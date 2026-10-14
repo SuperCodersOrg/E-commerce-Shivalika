@@ -1,17 +1,11 @@
-const User = require("../models/User");
-
 const showDashboard = async (req, res, next) => {
     try {
-        const user = await User.findById(req.userId).select("name email");
-
-        if (!user) {
-            res.clearCookie("token");
-            return res.redirect("/auth/login");
-        }
+        const user = req.user || null;
+        const initial = user && user.name ? user.name.charAt(0).toUpperCase() : null;
 
         res.render("dashboard", {
             user,
-            initial: user.name.charAt(0).toUpperCase()
+            initial
         });
     } catch (error) {
         next(error);

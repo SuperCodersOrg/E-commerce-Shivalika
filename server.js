@@ -7,17 +7,29 @@ const path = require("path");
 const connectDB = require("./config/db");
 const { importProductsIfEmpty } = require("./services/productService");
 
+const attachUser = require("./middleware/attachUser");
+const errorMiddleware = require("./middleware/errorMiddleware");
+
 const authRoutes = require("./routes/authRoutes");
 const passwordRoutes = require("./routes/passwordRoutes");
 const productRoutes = require("./routes/productRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
-
-const errorMiddleware = require("./middleware/errorMiddleware");
+const cartRoutes = require("./routes/cartRoutes");
+const checkoutRoutes = require("./routes/checkoutRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+const { stripeWebhookHandler } = require("./controllers/checkoutController");
 
 const app = express();
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// Stripe webhook route needs raw body parser BEFORE express.json()
+app.post(
+    "/api/webhook/stripe",
+    express.raw({ type: "application/json" }),
+    stripeWebhookHandler
+);
 
 app.use(express.urlencoded({
     extended: false,
@@ -29,13 +41,19 @@ app.use(express.json({
 }));
 
 app.use(cookieParser());
-
 app.use(express.static(path.join(__dirname, "public")));
 
+// Globally attach user and cart count to req and res.locals
+app.use(attachUser);
+
+// Mount application routes
 app.use("/auth", authRoutes);
 app.use("/auth", passwordRoutes);
 app.use("/", dashboardRoutes);
 app.use("/", productRoutes);
+app.use("/", cartRoutes);
+app.use("/", checkoutRoutes);
+app.use("/", profileRoutes);
 
 // 404 handler for unmatched routes
 app.use((req, res) => {
