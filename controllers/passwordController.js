@@ -6,16 +6,15 @@ const { sendEmail } = require("../services/emailService");
 
 const showForgotPassword = (req, res) => {
     res.render("auth/forgot-password", {
-        message: null,
-        resetLink: null
+        message: null, //default
+        resetLink: null  //default kara ha
     });
 };
 
 const forgotPassword = async (req, res, next) => {
     try {
         const email = req.body.email?.trim().toLowerCase();
-
-        const genericMessage =
+        const genericMessage = //to check as email nahi jari
             "If an account exists for that email, a reset link will be sent.";
 
         const user = await User.findOne({ email });
@@ -26,13 +25,10 @@ const forgotPassword = async (req, res, next) => {
                 resetLink: null
             });
         }
-
+  //random token
         const rawToken = crypto.randomBytes(32).toString("hex");
-
-        const hashedToken = crypto
-            .createHash("sha256")
-            .update(rawToken)
-            .digest("hex");
+   //data ko hash krna ->>>hashed token
+        const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 
         user.passwordResetToken = hashedToken;
         user.passwordResetExpires = new Date(
@@ -44,28 +40,18 @@ const forgotPassword = async (req, res, next) => {
         const baseUrl = process.env.BASE_URL || "http://localhost:3000";
         const resetLink = `${baseUrl}/auth/reset-password/${rawToken}`;
 
-        console.log("==================================================");
-        console.log(`[PASSWORD RESET] User: ${user.email}`);
-        console.log(`[PASSWORD RESET LINK] ${resetLink}`);
-        console.log("==================================================");
-
-        let emailSent = false;
-        try {
-            await sendEmail({
-                to: user.email,
-                subject: "Reset your My Store password",
-                html: `
-                    <h2>Password Reset</h2>
-                    <p>Click below to choose a new password.</p>
-                    <p><a href="${resetLink}">Reset Password</a></p>
-                    <p>This link expires in 15 minutes.</p>
-                    <p>If you did not request this, ignore this email.</p>
-                `
-            });
-            emailSent = true;
-        } catch (emailError) {
-            console.warn("Failed to dispatch password reset email via SMTP:", emailError.message);
-        }
+        const emailResult = await sendEmail({
+            to: user.email,
+            subject: "Reset your My Store password",
+            html: `
+                <h2>Password Reset</h2>
+                <p>Click below to choose a new password.</p>
+                <p><a href="${resetLink}">Reset Password</a></p>
+                <p>This link expires in 15 minutes.</p>
+                <p>If you did not request this, ignore this email.</p>
+            `
+        });
+        const emailSent = Boolean(emailResult?.success);
 
         res.render("auth/forgot-password", {
             message: genericMessage,
@@ -105,7 +91,7 @@ const showResetPassword = async (req, res) => {
 const resetPassword = async (req, res, next) => {
     try {
         const { password, confirmPassword } = req.body;
-
+//password mini of 8 if less then not accept
         if (!password || password.length < 8) {
             return res.status(400).render("auth/reset-password", {
                 token: req.params.token,
@@ -138,8 +124,8 @@ const resetPassword = async (req, res, next) => {
                 actionText: "Request New Link"
             });
         }
-
-        user.password = await bcrypt.hash(password, 12);
+                            //pass hashing lib(no dirct pass store user ko bhi pata nahi hoga)
+       user.password = await bcrypt.hash(password, 12);
         user.passwordResetToken = null;
         user.passwordResetExpires = null;
 

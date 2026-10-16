@@ -12,8 +12,6 @@ const showProfile = async (req, res, next) => {
             res.clearCookie("token");
             return res.redirect("/auth/login");
         }
-
-        // Fetch first batch of orders using cursor indexing
         const orders = await Order.find({ user: user._id })
             .sort({ _id: -1 })
             .limit(PAGE_SIZE + 1);
@@ -38,7 +36,7 @@ const showProfile = async (req, res, next) => {
     }
 };
 
-// Cursor-based API for loading more orders
+// Cursor-based API for loading more orders 
 const getOrdersCursor = async (req, res, next) => {
     try {
         const { cursor } = req.query;
@@ -57,9 +55,7 @@ const getOrdersCursor = async (req, res, next) => {
 
         const hasMore = orders.length > PAGE_SIZE;
         const resultOrders = orders.slice(0, PAGE_SIZE);
-        const nextCursor = resultOrders.length > 0
-            ? resultOrders[resultOrders.length - 1]._id.toString()
-            : null;
+        const nextCursor = resultOrders.length > 0? resultOrders[resultOrders.length - 1]._id.toString(): null;
 
         res.json({
             orders: resultOrders,
@@ -71,7 +67,26 @@ const getOrdersCursor = async (req, res, next) => {
     }
 };
 
+const becomeSeller = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user) {
+            res.clearCookie("token");
+            return res.redirect("/auth/login");
+        }
+
+        user.role = "seller";
+        user.isAdmin = true;
+        await user.save();
+
+        return res.redirect("/seller");
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     showProfile,
-    getOrdersCursor
+    getOrdersCursor,
+    becomeSeller
 };
