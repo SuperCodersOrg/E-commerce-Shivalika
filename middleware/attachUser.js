@@ -17,10 +17,10 @@ const attachUser = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.userId = decoded.userId;
 
-        const user = await User.findById(decoded.userId).select("name email");
+        const user = await User.findById(decoded.userId).select("name email role isAdmin");
         if (user) {
+            req.userId = user._id.toString();
             req.user = user;
             res.locals.user = user;
             res.locals.initial = user.name ? user.name.charAt(0).toUpperCase() : "U";
@@ -28,9 +28,13 @@ const attachUser = async (req, res, next) => {
             // Count total quantity in user's cart
             const cart = await Cart.findOne({ user: user._id }).select("items");
             if (cart && Array.isArray(cart.items)) {
-                const totalItems = cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+             //aggreation
+       const totalItems = cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
                 res.locals.cartCount = totalItems;
             }
+        } else {
+            // User was removed from DB , cokkie destroy kr di
+            res.clearCookie("token");
         }
     } catch (err) {
         // Token invalid or expired
@@ -41,3 +45,4 @@ const attachUser = async (req, res, next) => {
 };
 
 module.exports = attachUser;
+//issue
